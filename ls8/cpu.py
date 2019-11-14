@@ -6,6 +6,8 @@ LDI = 0b10000010
 PRN = 0b01000111
 HLT = 0b00000001
 MUL = 0b10100010
+PUSH = 0b01000101
+POP = 0b01000110
 
 
 class CPU:
@@ -16,6 +18,8 @@ class CPU:
         self.ram = [0] * 256
         self.reg = [0] * 8
         self.pc = 0
+        self.SP = 7
+        self.reg[self.SP] = 0xf4  # initalize SP to empty stack
 
     def load(self):
         """Load a program into memory."""
@@ -112,12 +116,6 @@ class CPU:
         # ready from ram_read() the bytes at PC+1 and PC+2
         # set them to variables operand_a and operand_b
 
-        # self.ram_read(instruction)
-
-        # cascade if elif statements for each instruction
-
-        # while not halted ?
-        # HLT
         while self.ram_read(self.pc) != HLT:
             instruction = self.ram_read(self.pc)
             # LDI = Load 'immediate', set this register to 'value'
@@ -138,6 +136,46 @@ class CPU:
 
                 self.pc += 3
 
+            elif instruction == PUSH:
+                self.reg[self.SP] -= 1  # decrement stack pointer
+
+                # Copy the value in the given register to the address pointed to by SP
+
+                # Address of register in ram
+                reg_address = self.ram[self.pc + 1]
+                # reg value from the given register in ram address
+                reg_value = self.reg_read(reg_address)
+
+                # copy reg value into memory at address self.SP
+                self.ram[self.reg[self.SP]] = reg_value
+
+                self.pc += 2
+
+                # self.trace()
+
+            elif instruction == POP:
+                # copy the value from the address pointed to by SP to the given register
+
+                # value from the address pointed to by SP in REG
+                reg_value = self.ram_read(self.reg_read(self.SP))
+                # the given register from file, location: pc + 1 in ram
+                reg_num = self.ram[self.pc + 1]
+
+                # copying the VALUE from above TO the register
+                self.reg[reg_num] = reg_value
+                # increment SP
+                self.reg[self.SP] += 1
+
+                self.pc += 2
+
+                # self.trace()
+
+            # elif instruction == CALL:
+            #     pass
+
+            # elif instruction == RET:
+            #     pass
+
             # PRN = print numeric value stored in given register
             # # print to th econsole the decimal int value that is stored in reg
             elif instruction == PRN:
@@ -145,6 +183,7 @@ class CPU:
                 print(f"Print: {value}")
 
                 self.pc += 2
+                self.trace()
             else:
                 print(f"Unknown instruction at index {self.pc}")
                 sys.exit(1)
