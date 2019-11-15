@@ -8,6 +8,10 @@ HLT = 0b00000001
 MUL = 0b10100010
 PUSH = 0b01000101
 POP = 0b01000110
+CALL = 0b01010000
+RET = 0b00010001
+JMP = 0b01010100
+ADD = 0b10100000
 
 
 class CPU:
@@ -44,6 +48,7 @@ class CPU:
                 # print(val)
 
                 self.ram[address] = val
+
                 address += 1
 
         # If using hardcoded program = []
@@ -55,7 +60,7 @@ class CPU:
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
 
-        if op == "ADD":
+        if op == ADD:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == MUL:
             self.reg[reg_a] *= self.reg[reg_b]
@@ -136,6 +141,12 @@ class CPU:
 
                 self.pc += 3
 
+            elif instruction == ADD:
+                self.alu(ADD, self.ram_read(self.pc + 1),
+                         self.ram_read(self.pc + 2))
+
+                self.pc += 3
+
             elif instruction == PUSH:
                 self.reg[self.SP] -= 1  # decrement stack pointer
 
@@ -170,11 +181,22 @@ class CPU:
 
                 # self.trace()
 
-            # elif instruction == CALL:
-            #     pass
+            elif instruction == CALL:
+                # push return address on stack
+                return_address = self.pc + 2
+                # decrement SP
+                self.reg[self.SP] -= 1
+                self.ram[self.reg[self.SP]] = return_address
 
-            # elif instruction == RET:
-            #     pass
+                # set the pc to the value in the register
+                reg_num = self.ram[self.pc + 1]
+                self.pc = self.reg[reg_num]
+
+            elif instruction == RET:
+                # pop the return address off stack
+                # store it in the pc
+                self.pc = self.ram[self.reg[self.SP]]
+                self.reg[self.SP] += 1
 
             # PRN = print numeric value stored in given register
             # # print to th econsole the decimal int value that is stored in reg
