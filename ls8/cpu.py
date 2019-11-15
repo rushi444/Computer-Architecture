@@ -12,6 +12,9 @@ CALL = 0b01010000
 RET = 0b00010001
 JMP = 0b01010100
 ADD = 0b10100000
+CMP = 0b10100111
+JEQ = 0b01010101
+JNE = 0b01010110
 
 
 class CPU:
@@ -24,6 +27,10 @@ class CPU:
         self.pc = 0
         self.SP = 7
         self.reg[self.SP] = 0xf4  # initalize SP to empty stack
+
+        self.E = 0
+        self.L = 0
+        self.G = 0
 
     def load(self):
         """Load a program into memory."""
@@ -64,6 +71,19 @@ class CPU:
             self.reg[reg_a] += self.reg[reg_b]
         elif op == MUL:
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == CMP:
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.E = 1
+                self.L = 0
+                self.G = 0
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.E = 0
+                self.L = 1
+                self.G = 0
+            elif self.reg[reg_a] > self.reg[reg_a]:
+                self.E = 0
+                self.L = 0
+                self.G = 1
         else:
             raise Exception("Unsupported ALU operation")
 
@@ -198,8 +218,28 @@ class CPU:
                 self.pc = self.ram[self.reg[self.SP]]
                 self.reg[self.SP] += 1
 
-            # PRN = print numeric value stored in given register
-            # # print to th econsole the decimal int value that is stored in reg
+            elif instruction == CMP:
+                self.alu(CMP, self.ram_read(self.pc + 1),
+                         self.ram_read(self.pc + 2))
+                self.pc += 3
+
+            elif instruction == JMP:
+                self.pc = self.reg[self.ram[self.pc + 1]]
+
+            elif instruction == JEQ:
+                if self.E == 1:
+                    self.pc = self.reg[self.ram[self.pc + 1]]
+                else:
+                    self.pc += 2
+
+            elif instruction == JNE:
+                if self.E == 0:
+                    self.pc = self.reg[self.ram[self.pc + 1]]
+                else:
+                    self.pc += 2
+
+                # PRN = print numeric value stored in given register
+                # # print to th econsole the decimal int value that is stored in reg
             elif instruction == PRN:
                 value = self.reg_read(self.ram_read(self.pc + 1))
                 print(f"Print: {value}")
